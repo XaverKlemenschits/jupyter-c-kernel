@@ -71,11 +71,17 @@ class CKernel(Kernel):
     implementation_version = '1.0'
     language = 'c'
     language_version = 'C11'
-    language_info = {'name': 'c',
+    language_info = {'name': 'text/x-csrc',
                      'mimetype': 'text/plain',
                      'file_extension': '.c'}
     banner = "C kernel.\n" \
              "Uses gcc, compiles in C11, and creates source code files and executables in temporary folder.\n"
+
+    main_head = "#include <stdio.h>\n" \
+            "#include <math.h>\n" \
+            "int main(){\n"
+
+    main_foot = "\nreturn 0;\n}"
 
     def __init__(self, *args, **kwargs):
         super(CKernel, self).__init__(*args, **kwargs)
@@ -123,6 +129,8 @@ class CKernel(Kernel):
                   'ldflags': [],
                   'args': []}
 
+        actualCode = ''
+
         for line in code.splitlines():
             if line.startswith('//%'):
                 key, value = line[3:].split(":", 2)
@@ -136,12 +144,28 @@ class CKernel(Kernel):
                     for argument in re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', value):
                         magics['args'] += [argument.strip('"')]
 
-        return magics
+            # only keep lines which did not contain magics
+            else:
+                actualCode += line + '\n'
+
+        return magics, actualCode
+
+    # check whether int main() is specified, if not add it around the code
+    # also add necessary magics like -lm
+    def _add_main(self, magics, code):
+        x = re.search("int\s+main\s*\(", code)
+        if x is None:
+            code = self.main_head + code + self.main_foot
+            magics['cflags'] += ['-lm']
+
+        return magics, code
 
     def do_execute(self, code, silent, store_history=True,
-                   user_expressions=None, allow_stdin=False):
+                   user_expressions=None, allow_stdin=True):
 
-        magics = self._filter_magics(code)
+        magics, code = self._filter_magics(code)
+
+        magics, code = self._add_main(magics, code)
 
         with self.new_temp_file(suffix='.c') as source_file:
             source_file.write(code)

@@ -5,7 +5,7 @@
  * `docker pull brendanrius/jupyter-c-kernel`
  * `docker run -p 8888:8888 brendanrius/jupyter-c-kernel`
  * Copy the given URL containing the token, and browse to it. For instance:
- 
+
  ```
  Copy/paste this URL into your browser when you connect for the first time,
  to login with a token:
@@ -47,9 +47,10 @@ change the code in real-time in Docker. For that, just run the docker box like
 that:
 
 ```bash
-git clone https://github.com/brendan-rius/jupyter-c-kernel.git
+git clone https://github.com/XaverKlemenschits/jupyter-c-kernel.git
 cd jupyter-c-kernel
-docker run -v $(pwd):/jupyter/jupyter_c_kernel/ -p 8888:8888 brendanrius/jupyter-c-kernel
+docker build -t myName/jupyter .
+docker run -v $(pwd):/tmp/jupyter_c_kernel/ -p 8888:8888 myName/jupyter
 ```
 
 This clones the source, run the kernel, and binds the current folder (the one
