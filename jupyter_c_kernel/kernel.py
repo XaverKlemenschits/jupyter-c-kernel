@@ -14,7 +14,9 @@ class RealTimeSubprocess(subprocess.Popen):
     A subprocess that allows to read its stdout and stderr in real time
     """
 
-    def __init__(self, cmd, write_to_stdout, write_to_stderr):
+    inputRequest = "<inputRequest>"
+
+    def __init__(self, cmd, write_to_stdout, write_to_stderr, read_from_stdin):
         """
         :param cmd: the command to execute
         :param write_to_stdout: a callable that will be called with chunks of data from stdout
@@ -22,8 +24,9 @@ class RealTimeSubprocess(subprocess.Popen):
         """
         self._write_to_stdout = write_to_stdout
         self._write_to_stderr = write_to_stderr
+        self._read_from_stdin = read_from_stdin
 
-        super().__init__(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
+        super().__init__(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
 
         self._stdout_queue = Queue()
         self._stdout_thread = Thread(target=RealTimeSubprocess._enqueue_output, args=(self.stdout, self._stdout_queue))
@@ -60,10 +63,23 @@ class RealTimeSubprocess(subprocess.Popen):
 
         stdout_contents = read_all_from_queue(self._stdout_queue)
         if stdout_contents:
-            self._write_to_stdout(stdout_contents)
+            contents = stdout_contents.decode()
+            # if there is input request, make output and then
+            # ask frontend for input
+            start = contents.find(self.__class__.inputRequest)
+            if(start >= 0):
+                contents = contents.replace(self.__class__.inputRequest, '')
+                if(len(contents) > 0):
+                    self._write_to_stdout(contents)
+                readLine = self._read_from_stdin()
+                self.stdin.write(readLine.encode())
+                self.stdin.write(b"\n")
+            else:
+                self._write_to_stdout(contents)
+
         stderr_contents = read_all_from_queue(self._stderr_queue)
         if stderr_contents:
-            self._write_to_stderr(stderr_contents)
+            self._write_to_stderr(stderr_contents.decode())
 
 
 class CKernel(Kernel):
@@ -85,11 +101,13 @@ class CKernel(Kernel):
 
     def __init__(self, *args, **kwargs):
         super(CKernel, self).__init__(*args, **kwargs)
+        self._allow_stdin = True
         self.files = []
         mastertemp = tempfile.mkstemp(suffix='.out')
         os.close(mastertemp[0])
         self.master_path = mastertemp[1]
-        filepath = path.join(path.dirname(path.realpath(__file__)), 'resources', 'master.c')
+        self.resDir = path.join(path.dirname(path.realpath(__file__)), 'resources')
+        filepath = path.join(self.resDir, 'master.c')
         subprocess.call(['gcc', filepath, '-std=c11', '-rdynamic', '-ldl', '-o', self.master_path])
 
     def cleanup_files(self):
@@ -113,10 +131,14 @@ class CKernel(Kernel):
     def _write_to_stderr(self, contents):
         self.send_response(self.iopub_socket, 'stream', {'name': 'stderr', 'text': contents})
 
+    def _read_from_stdin(self):
+        return self.raw_input()
+
     def create_jupyter_subprocess(self, cmd):
         return RealTimeSubprocess(cmd,
-                                  lambda contents: self._write_to_stdout(contents.decode()),
-                                  lambda contents: self._write_to_stderr(contents.decode()))
+                                  self._write_to_stdout,
+                                  self._write_to_stderr,
+                                  self._read_from_stdin)
 
     def compile_with_gcc(self, source_filename, binary_filename, cflags=None, ldflags=None):
         cflags = ['-std=c11', '-fPIC', '-shared', '-rdynamic'] + cflags
@@ -166,6 +188,11 @@ class CKernel(Kernel):
         magics, code = self._filter_magics(code)
 
         magics, code = self._add_main(magics, code)
+
+        # replace stdio with wrapped version
+        headerDir = "\"" + self.resDir + "/stdio_wrap.h" + "\""
+        code = code.replace("<stdio.h>", headerDir)
+        code = code.replace("\"stdio.h\"", headerDir)
 
         with self.new_temp_file(suffix='.c') as source_file:
             source_file.write(code)
