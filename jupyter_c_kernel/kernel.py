@@ -112,8 +112,11 @@ class CKernel(Kernel):
 
     def cleanup_files(self):
         """Remove all the temporary files created by the kernel"""
+        # keep the list of files create in case there is an exception
+        # before they can be deleted as usual
         for file in self.files:
-            os.remove(file)
+            if(os.path.exists(file)):
+                os.remove(file)
         os.remove(self.master_path)
 
     def new_temp_file(self, **kwargs):
@@ -173,7 +176,7 @@ class CKernel(Kernel):
         return magics, actualCode
 
     # check whether int main() is specified, if not add it around the code
-    # also add necessary magics like -lm
+    # also add common magics like -lm
     def _add_main(self, magics, code):
         x = re.search("int\s+main\s*\(", code)
         if x is None:
@@ -206,6 +209,11 @@ class CKernel(Kernel):
                     self._write_to_stderr(
                             "[C kernel] GCC exited with code {}, the executable will not be executed".format(
                                     p.returncode))
+
+                    # delete source files before exit
+                    os.remove(source_file.name)
+                    os.remove(binary_file.name)
+
                     return {'status': 'ok', 'execution_count': self.execution_count, 'payload': [],
                             'user_expressions': {}}
 
@@ -213,6 +221,10 @@ class CKernel(Kernel):
         while p.poll() is None:
             p.write_contents()
         p.write_contents()
+
+        # now remove the files we have just created
+        os.remove(source_file.name)
+        os.remove(binary_file.name)
 
         if p.returncode != 0:
             self._write_to_stderr("[C kernel] Executable exited with code {}".format(p.returncode))

@@ -2,8 +2,8 @@
 
 ## Use with Docker (recommended)
 
- * `docker pull brendanrius/jupyter-c-kernel`
- * `docker run -p 8888:8888 brendanrius/jupyter-c-kernel`
+ * `docker pull xaverklemenschits/jupyter-c-kernel`
+ * `docker run -p 8888:8888 xaverklemenschits/jupyter-c-kernel`
  * Copy the given URL containing the token, and browse to it. For instance:
 
  ```
@@ -24,9 +24,14 @@ Works only on Linux and OS X. Windows is not supported yet. If you want to use t
   * pip
 
 ### Step-by-step:
- * `pip install jupyter-c-kernel`
- * `install_c_kernel`
- * `jupyter-notebook`. Enjoy!
+```bash
+git clone https://github.com/XaverKlemenschits/jupyter-c-kernel.git
+cd jupyter-c-kernel
+pip install -e .
+cd jupyter_c_kernel && install_c_kernel --user
+# now you can start the notebook
+jupyter notebook
+```
 
 ## Example of notebook
 

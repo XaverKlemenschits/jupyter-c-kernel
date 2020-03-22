@@ -1,5 +1,5 @@
 FROM jupyter/minimal-notebook
-MAINTAINER Brendan Rius <ping@brendan-rius.com>
+MAINTAINER Xaver Klemenschits <klemenschits@iue.tuwien.ac.at>
 
 USER root
 
