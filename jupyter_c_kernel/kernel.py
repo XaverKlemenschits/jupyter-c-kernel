@@ -102,8 +102,9 @@ class CKernel(Kernel):
     def __init__(self, *args, **kwargs):
         super(CKernel, self).__init__(*args, **kwargs)
         self._allow_stdin = True
-        self.readOnlyFileSystem = True
-        self.wErrorwAll = True
+        self.readOnlyFileSystem = False
+        self.wAll = True # show all warnings by default
+        self.wError = False # but keep comipiling for warnings
         self.files = []
         mastertemp = tempfile.mkstemp(suffix='.out')
         os.close(mastertemp[0])
@@ -147,8 +148,10 @@ class CKernel(Kernel):
 
     def compile_with_gcc(self, source_filename, binary_filename, cflags=None, ldflags=None):
         cflags = ['-std=c11', '-fPIC', '-shared', '-rdynamic'] + cflags
-        if self.wErrorwAll:
-            cflags = cflags + ['-Wall', '-Werror']
+        if self.wError:
+            cflags = cflags + ['-Werror']
+        if self.wAll:
+            cflags = cflags + ['-Wall']
         if self.readOnlyFileSystem:
             cflags = ['-DREAD_ONLY_FILE_SYSTEM'] + cflags
         args = ['gcc', source_filename] + cflags + ['-o', binary_filename] + ldflags

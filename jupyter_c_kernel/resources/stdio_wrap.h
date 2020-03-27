@@ -21,8 +21,9 @@ int getchar_wrap(){
   return getchar();
 }
 
-/* Replace all the necessary input functions */
-#define scanf(format, ...) scanf_wrap(format, __VA_ARGS__)
+/* Replace all the necessary input functions
+  Need double hashes in case there are no __VA_ARGS__*/
+#define scanf(format, ...) scanf_wrap(format, ##__VA_ARGS__)
 
 #define getchar() getchar_wrap()
 
@@ -34,25 +35,28 @@ int getchar_wrap(){
 FILE *fopen_wrap(const char *filename, const char *modes) {
   static long stream = 0x1FFFF0000;
 #ifdef SHOW_FILE_IO_VERBOSE
+  printf("\x01b[42m");
   printf("\"%s\" opened in mode \"%s\"\n", filename, modes);
+  printf("\x01b[0m");
 #endif /* SHOW_FILE_IO_VERBOSE */
   return (FILE*)stream++;
 }
 
 int fprintf_wrap(FILE* stream, const char* format, ...) {
   printf("\x01b[42m");
+  printf("%p:", stream);
+  printf("\x01b[0m");
   va_list arglist;
   va_start( arglist, format );
   int result = vprintf(format, arglist);
   va_end( arglist );
-  printf("\x01b[0m");
   return result;
 }
 
 /* Replace all the necessary input functions */
 #define fopen(file, mode) fopen_wrap(file, mode)
 
-#define fprintf(stream, format, ...) fprintf_wrap(stream, format, __VA_ARGS__)
+#define fprintf(stream, format, ...) fprintf_wrap(stream, format, ##__VA_ARGS__)
 
 #endif  /* READ_ONLY_FILE_SYSTEM */
 
