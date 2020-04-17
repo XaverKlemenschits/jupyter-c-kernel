@@ -104,6 +104,7 @@ class CKernel(Kernel):
         super(CKernel, self).__init__(*args, **kwargs)
         self._allow_stdin = True
         self.readOnlyFileSystem = False
+        self.linkMaths = True # always link math library
         self.wAll = True # show all warnings by default
         self.wError = False # but keep comipiling for warnings
         self.files = []
@@ -152,6 +153,8 @@ class CKernel(Kernel):
         # cflags = ['-std=iso9899:199409', '-pedantic', '-fPIC', '-shared', '-rdynamic'] + cflags
         # cflags = ['-std=c99', '-pedantic', '-fPIC', '-shared', '-rdynamic'] + cflags
         cflags = ['-std=c11', '-pedantic', '-fPIC', '-shared', '-rdynamic'] + cflags
+        if self.linkMaths:
+            cflags = cflags + ['-lm']
         if self.wError:
             cflags = cflags + ['-Werror']
         if self.wAll:
