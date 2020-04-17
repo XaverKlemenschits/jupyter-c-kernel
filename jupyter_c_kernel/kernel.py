@@ -71,7 +71,9 @@ class RealTimeSubprocess(subprocess.Popen):
                 contents = contents.replace(self.__class__.inputRequest, '')
                 if(len(contents) > 0):
                     self._write_to_stdout(contents)
-                readLine = self._read_from_stdin()
+                readLine = ""
+                while(len(readLine) == 0):
+                    readLine = self._read_from_stdin()
                 # need to add newline since it is not captured by frontend
                 readLine += "\n"
                 self.stdin.write(readLine.encode())
