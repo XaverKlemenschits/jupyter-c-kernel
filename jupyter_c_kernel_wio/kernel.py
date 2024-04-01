@@ -86,7 +86,7 @@ class RealTimeSubprocess(subprocess.Popen):
 
 
 class CKernel(Kernel):
-    implementation = 'jupyter_c_kernel'
+    implementation = 'jupyter_c_kernel_wio'
     implementation_version = '1.0'
     language = 'c'
     language_version = 'C11'
