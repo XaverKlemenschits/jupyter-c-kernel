@@ -125,7 +125,7 @@ static char inputBuff[1<<10] = "";
 static long scanf_wrap_number_read = 0;
 
 /* read remaining input into buffer so it can be used in next call */
-void readIntoBuffer() {
+void readIntoBuffer(void) {
   long length = strlen(inputBuff);
   char nextChar = 0;
   while((nextChar = getchar()) != '\n' && nextChar != EOF){
@@ -136,7 +136,7 @@ void readIntoBuffer() {
 }
 
 /* check whether input request is needed */
-char checkInputRequest() {
+char checkInputRequest(void) {
   const long length = strlen(inputBuff);
   long i = 0;
   for(; i < length && isspace(inputBuff[i]); ++i);
@@ -242,7 +242,7 @@ int scanf_wrap(const char *format, ...) {
   }
 }
 
-int getchar_wrap(){
+int getchar_wrap(void){
   /* check if there is still something in the input buffer*/
   char input = 0;
   long length = strlen(inputBuff);
